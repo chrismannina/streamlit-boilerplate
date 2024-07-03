@@ -13,7 +13,7 @@ class AppConfig:
     SHOW_SIDEBAR: bool = True
     PAGES: dict = field(default_factory=lambda: {
         "Home": {"icon": "house", "page_number": ""},
-        "Dashboard": {"icon": "bar_chart", "page_number": "1"},
+        "Search": {"icon": "mag", "page_number": "1"},
         "Settings": {"icon": "gear", "page_number": "2"},
     })
 

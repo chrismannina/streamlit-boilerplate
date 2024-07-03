@@ -1,9 +1,10 @@
 import streamlit as st
+from config import APP_CONFIG
 from components.authentication import is_authenticated, change_password, change_username
 from components.navigation import render_navigation
-from config import APP_CONFIG
 
-if not is_authenticated():
+
+if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
     st.warning("Please log in to access this page.")
     st.stop()
 

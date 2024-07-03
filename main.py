@@ -15,7 +15,10 @@ def main():
     load_js()
 
     if 'authenticated' not in st.session_state:
-        st.session_state.authenticated = False
+        if APP_CONFIG.USE_AUTHENTICATION:
+            st.session_state.authenticated = False
+        else:
+            st.session_state.authenticated = True
 
     if not is_authenticated():
         login_user()
@@ -23,10 +26,13 @@ def main():
         render_navigation()
         
         st.title(f"Welcome to {APP_CONFIG.APP_NAME}")
-        st.write(f"Hello, {st.session_state.username}!")
+        if APP_CONFIG.USE_AUTHENTICATION:
+            st.write(f"Hello, {st.session_state.username}!")
+        else: 
+            st.write("Hello!")
         st.write("This is the main page of your application.")
         st.write("Use the navigation to explore other pages.")
-        if APP_CONFIG.SHOW_NAVBAR:
+        if APP_CONFIG.USE_AUTHENTICATION and APP_CONFIG.SHOW_NAVBAR:
             if st.button("Logout", key="navbar_logout", use_container_width=True):
                 logout_user()
                 

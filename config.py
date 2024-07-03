@@ -7,7 +7,7 @@ class AppConfig:
     LAYOUT: str = "wide"
     THEME_COLOR: str = "#3366cc"
     FONT_FAMILY: str = "sans serif"
-    USE_AUTHENTICATION: bool = True
+    USE_AUTHENTICATION: bool = False
     AUTH_METHOD: str = "in_memory"  # Options: "in_memory", "database", "api"
     SHOW_NAVBAR: bool = False
     SHOW_SIDEBAR: bool = True
@@ -15,7 +15,6 @@ class AppConfig:
         "Home": {"icon": "house", "page_number": ""},
         "Dashboard": {"icon": "bar_chart", "page_number": "1"},
         "Settings": {"icon": "gear", "page_number": "2"},
-        "Profile": {"icon": "bust_in_silhouette", "page_number": "3"}
     })
 
 APP_CONFIG = AppConfig()

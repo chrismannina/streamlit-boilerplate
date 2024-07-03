@@ -25,21 +25,15 @@ This is a highly modular and scalable starter template for building Streamlit ap
 - `components/`: Reusable UI components
 - `utils/`: Utility functions and helpers
 - `assets/`: Static assets (CSS, JS, images)
-- `tests/`: Unit tests
 - `.streamlit/`: Streamlit-specific configurations
-- `setup.sh`: Setup script for environment variables and dependencies
 
 ## Customization
 
 1. Modify `config.py` to change application-wide settings
 2. Add new pages in the `pages/` directory
 3. Create new components in the `components/` directory
-4. Customize styles in `assets/css/main.css`
+4. Customize styles in `static/css/main.css`
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License.

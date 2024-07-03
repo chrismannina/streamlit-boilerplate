@@ -27,7 +27,9 @@ def render_nav_items(is_sidebar=False):
                 st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
     
     # Logout button for sidebar
-    if is_sidebar and APP_CONFIG.USE_AUTHENTICATION:
-        if st.button("Logout", key="sidebar_logout", use_container_width=True):
-            logout_user()
+    if is_sidebar:
+        if APP_CONFIG.USE_AUTHENTICATION:
+            if st.button("Logout", key="sidebar_logout", use_container_width=True):
+                logout_user()
+        st.markdown("---")
 

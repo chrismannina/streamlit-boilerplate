@@ -8,7 +8,7 @@ class AppConfig:
     THEME_COLOR: str = "#3366cc"
     FONT_FAMILY: str = "sans serif"
     USE_AUTHENTICATION: bool = False
-    AUTH_METHOD: str = "in_memory"  # Options: "in_memory", "database", "api"
+    AUTH_METHOD: str = "in_memory"
     SHOW_NAVBAR: bool = False
     SHOW_SIDEBAR: bool = True
     PAGES: dict = field(default_factory=lambda: {
@@ -16,5 +16,7 @@ class AppConfig:
         "Search": {"icon": "mag", "page_number": "1"},
         "Settings": {"icon": "gear", "page_number": "2"},
     })
+    CSS_FILE: str = "static/css/main.css"
+    JS_FILE: str = "static/js/main.js"
 
 APP_CONFIG = AppConfig()

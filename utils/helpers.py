@@ -1,20 +1,20 @@
 import streamlit as st
+import logging
 
-def load_css():
-    st.markdown("""
-        <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        .stApp {
-            background-color: #f0f2f6;
-        }
-        .stButton>button {
-            background-color: #4CAF50;
-            color: white;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+class CSSLoader:
+    @staticmethod
+    def load(file_path):
+        try:
+            with open(file_path, "r") as f:
+                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            logging.error(f"CSS file not found: {file_path}")
 
-def load_js():
-    # Add any JavaScript you want to load here
-    pass
+class JSLoader:
+    @staticmethod
+    def load(file_path):
+        try:
+            with open(file_path, "r") as f:
+                st.markdown(f"<script>{f.read()}</script>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            logging.error(f"JS file not found: {file_path}")

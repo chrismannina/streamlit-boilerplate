@@ -2,7 +2,8 @@ import streamlit as st
 from config import APP_CONFIG
 from components.authentication import is_authenticated, login_user, logout_user
 from components.navigation import render_navigation
-from utils.helpers import load_css, load_js
+from utils.helpers import CSSLoader, JSLoader
+from state import State
 
 def main():
     st.set_page_config(
@@ -11,18 +12,18 @@ def main():
         layout=APP_CONFIG.LAYOUT
     )
 
-    load_css()
-    load_js()
+    CSSLoader.load(APP_CONFIG.CSS_FILE)
+    JSLoader.load(APP_CONFIG.JS_FILE)
 
-    if 'authenticated' not in st.session_state:
+    state = State.initialize(st)
+
+    if not state.authenticated:
         if APP_CONFIG.USE_AUTHENTICATION:
-            st.session_state.authenticated = False
+            login_user()
         else:
-            st.session_state.authenticated = True
+            state.authenticated = True
 
-    if not is_authenticated():
-        login_user()
-    else:
+    if state.authenticated:
         render_navigation()
         
         st.title(f"Welcome to {APP_CONFIG.APP_NAME}")

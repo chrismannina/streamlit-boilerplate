@@ -1,0 +1,56 @@
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stApp {
+    background-color: #f0f2f6;
+}
+.stButton>button {
+    background-color: #4CAF50;
+    color: white;
+}
+.search-result {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+.search-result h3 {
+    margin-top: 0;
+}
+.search-result .score {
+    font-size: 0.8em;
+    color: #666;
+}
+.stExpander {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.stExpander > div:first-child {
+    background-color: #f8f9fa;
+}
+.stButton > button[kind="primary"] {
+    display: block !important;
+    width: 100% !important;
+    padding: 8px 12px !important;
+    text-align: left !important;
+    background-color: transparent !important;
+    border: none !important;
+    font-size: 16px !important;
+    color: inherit !important;
+    cursor: pointer !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background-color: #f0f0f0 !important;
+}
+.stButton > button[kind="primary"]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.stButton > button[kind="primary"] > div {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+.stIcon {
+    cursor: pointer;
+    margin-top: 25px;
+}

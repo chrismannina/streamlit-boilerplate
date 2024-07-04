@@ -1,0 +1,236 @@
+
+
+# main.py
+
+
+
+# pages/1_search.py
+
+import streamlit as st
+from config import APP_CONFIG
+from components.authentication import is_authenticated
+from components.navigation import render_navigation
+from components.search_components import Sidebar, ResultList, SourceDetail
+from utils.search_functions import DummySearch, add_to_past_searches
+from state import State
+from utils.error_handling import handle_error
+from streamlit_lucide import icon
+
+@handle_error
+def search_page():
+    state = State.initialize(st)
+
+    if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
+        st.warning("Please log in to access this page.")
+        st.stop()
+    
+    render_navigation()
+    Sidebar().render()
+
+    st.title("Clinical Search")
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        mrn = st.text_input("Enter Patient MRN", value=state.mrn)
+    with col2:
+        search_options = st.multiselect(
+            "Select search options",
+            ["Notes", "Labs", "Medication Orders", "Diagnoses"],
+            default=state.search_options if state.search_options else ["Notes"]
+        )
+    
+    query_col, icon_col = st.columns([6, 1])
+    with query_col:
+        query = st.text_input("Enter your search query", value=state.query)
+    with icon_col:
+        new_search = icon("refresh-cw", size=30, color="#4CAF50")
+
+    if st.button("Search", use_container_width=True) or new_search or query:
+        if mrn and search_options and query:
+            state.search_done = True
+            state.mrn = mrn
+            state.search_options = search_options
+            state.query = query
+            search_strategy = DummySearch()  # Or RealSearch() in production
+            state.results = search_strategy.search(mrn, search_options, query)
+            add_to_past_searches(mrn, search_options, query, state.results)
+            st.rerun()
+        else:
+            st.warning("Please fill in all fields (MRN, Search Options, and Query)")
+
+    if state.search_done:
+        st.subheader("Search Results")
+
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.markdown(
+                f"""
+                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <b>MRN:</b> {state.mrn}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with col2:
+            st.markdown(
+                f"""
+                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <b>Search Options:</b> {', '.join(state.search_options)}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        query_col, reset_col = st.columns([8, 1])
+        with query_col:
+            st.markdown(
+                f"""
+                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <b>Query:</b> {state.query}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with reset_col:
+            if st.button("Reset", key="reset_search_button"):
+                state.search_done = False
+                state.selected_results = set()
+                st.rerun()
+        
+        col1, col2 = st.columns([1, 3])
+
+        with col1:
+            ResultList(state.results).render()
+
+        with col2:
+            SourceDetail(state.results).render()
+
+if __name__ == "__main__":
+    search_page()
+
+# pages/2_settings.py
+
+import streamlit as st
+from config import APP_CONFIG
+from components.authentication import is_authenticated, change_password, change_username
+from components.navigation import render_navigation
+from state import State
+from utils.error_handling import handle_error
+
+@handle_error
+def settings_page():
+    state = State.initialize(st)
+
+    if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
+        st.warning("Please log in to access this page.")
+        st.stop()
+
+    render_navigation()
+
+    st.title("Settings")
+    st.write("This is the settings page. Add your settings content here.")
+
+    if APP_CONFIG.USE_AUTHENTICATION:
+        st.title("User Profile")
+        st.write(f"Current username: {st.session_state.username}")
+        
+        st.subheader("Change Password")
+        current_password = st.text_input("Current Password", type="password")
+        new_password = st.text_input("New Password", type="password")
+        if st.button("Change Password"):
+            if change_password(current_password, new_password):
+                st.success("Password changed successfully!")
+            else:
+                st.error("Failed to change password. Please check your current password.")
+
+        st.subheader("Change Username")
+        new_username = st.text_input("New Username")
+        if st.button("Change Username"):
+            if change_username(new_username):
+                st.success("Username changed successfully!")
+                st.experimental_rerun()
+            else:
+                st.error("Failed to change username. This username might already be taken.")
+
+if __name__ == "__main__":
+    settings_page()
+
+# static/css/main.css
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stApp {
+    background-color: #f0f2f6;
+}
+.stButton>button {
+    background-color: #4CAF50;
+    color: white;
+}
+.search-result {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+.search-result h3 {
+    margin-top: 0;
+}
+.search-result .score {
+    font-size: 0.8em;
+    color: #666;
+}
+.stExpander {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.stExpander > div:first-child {
+    background-color: #f8f9fa;
+}
+.stButton > button[kind="primary"] {
+    display: block !important;
+    width: 100% !important;
+    padding: 8px 12px !important;
+    text-align: left !important;
+    background-color: transparent !important;
+    border: none !important;
+    font-size: 16px !important;
+    color: inherit !important;
+    cursor: pointer !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background-color: #f0f0f0 !important;
+}
+.stButton > button[kind="primary"]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.stButton > button[kind="primary"] > div {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+.stIcon {
+    cursor: pointer;
+    margin-top: 25px;
+}
+
+# static/js/main.js
+
+console.log("Streamlit Starter Template loaded");
+
+# .streamlit/config.toml
+
+[theme]
+primaryColor = "#3366cc"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f0f0"
+textColor = "#31333F"
+font = "sans serif"
+
+[client]
+showSidebarNavigation = false
+
+# requirements.txt
+
+streamlit==1.24.0
+streamlit-lucide==0.1.3

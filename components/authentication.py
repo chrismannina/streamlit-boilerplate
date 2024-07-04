@@ -9,7 +9,7 @@ USERS = {
 }
 
 def is_authenticated():
-    return st.session_state.get('authenticated', False)
+    return st.session_state.app_state.authenticated
 
 def login_user():
     st.title("Login")
@@ -17,7 +17,7 @@ def login_user():
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         if authenticate_user(username, password):
-            st.session_state.authenticated = True
+            st.session_state.app_state.authenticated = True
             st.session_state.username = username
             st.success("Logged in successfully!")
             st.rerun()
@@ -25,7 +25,7 @@ def login_user():
             st.error("Invalid username or password")
 
 def logout_user():
-    st.session_state.authenticated = False
+    st.session_state.app_state.authenticated = False
     st.session_state.username = None
     st.rerun()
 
@@ -34,11 +34,9 @@ def authenticate_user(username, password):
         return username in USERS and USERS[username]["password"] == password
     elif APP_CONFIG.AUTH_METHOD == "database":
         # Implement database authentication logic
-        # Example: query a database to check username and password
         pass
     elif APP_CONFIG.AUTH_METHOD == "api":
         # Implement API authentication logic
-        # Example: make an API call to verify username and password
         pass
     return False
 

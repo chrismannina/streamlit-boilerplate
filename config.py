@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, field
 
 @dataclass
@@ -18,5 +19,18 @@ class AppConfig:
     })
     CSS_FILE: str = "static/css/main.css"
     JS_FILE: str = "static/js/main.js"
+    ENVIRONMENT: str = field(default_factory=lambda: os.getenv('APP_ENVIRONMENT', 'development'))
 
-APP_CONFIG = AppConfig()
+    @classmethod
+    def load_config(cls):
+        config = cls()
+        if config.ENVIRONMENT == 'production':
+            # Load production-specific settings
+            config.USE_AUTHENTICATION = True
+            # Add other production-specific settings
+        elif config.ENVIRONMENT == 'staging':
+            # Load staging-specific settings
+            pass
+        return config
+
+APP_CONFIG = AppConfig.load_config()

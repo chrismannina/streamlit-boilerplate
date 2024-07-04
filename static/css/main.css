@@ -50,3 +50,7 @@ footer {visibility: hidden;}
     text-align: left !important;
     justify-content: flex-start !important;
 }
+.stIcon {
+    cursor: pointer;
+    margin-top: 25px;
+}

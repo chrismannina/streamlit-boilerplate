@@ -1,8 +1,6 @@
 import streamlit as st
 from config import APP_CONFIG
 from components.authentication import logout_user
-from streamlit.runtime.scriptrunner import RerunData, RerunException
-from streamlit.source_util import get_pages
 
 def render_navigation():
     if APP_CONFIG.SHOW_NAVBAR:
@@ -32,4 +30,3 @@ def render_nav_items(is_sidebar=False):
             if st.button("Logout", key="sidebar_logout", use_container_width=True):
                 logout_user()
         st.markdown("---")
-

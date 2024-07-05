@@ -2,6 +2,7 @@ import streamlit as st
 from config import APP_CONFIG
 from components.authentication import logout_user
 
+
 def render_navigation():
     if APP_CONFIG.SHOW_NAVBAR:
         render_nav_items(is_sidebar=False)
@@ -10,20 +11,33 @@ def render_navigation():
             st.title("Navigation")
             render_nav_items(is_sidebar=True)
 
+
 def render_nav_items(is_sidebar=False):
     cols = st.columns(len(APP_CONFIG.PAGES) + 1) if not is_sidebar else [st.sidebar]
-    
+
     for idx, (page_name, settings) in enumerate(APP_CONFIG.PAGES.items()):
         icon = settings.get("icon")
         page_number = settings.get("page_number")
-        page_path = f"pages/{page_number}_{page_name.lower()}" if page_name.lower() != "home" else "main"
+        page_path = (
+            f"pages/{page_number}_{page_name.lower()}"
+            if page_name.lower() != "home"
+            else "main"
+        )
 
         if is_sidebar:
-            st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
+            st.page_link(
+                f"{page_path}.py",
+                label=f":{icon}: {page_name}",
+                use_container_width=True,
+            )
         else:
             with cols[idx]:
-                st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
-    
+                st.page_link(
+                    f"{page_path}.py",
+                    label=f":{icon}: {page_name}",
+                    use_container_width=True,
+                )
+
     # Logout button for sidebar
     if is_sidebar:
         if APP_CONFIG.USE_AUTHENTICATION:

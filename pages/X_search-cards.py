@@ -5,6 +5,7 @@ from config import APP_CONFIG
 from typing import List, Dict
 import random
 
+
 def dummy_search(mrn: str, search_options: List[str], query: str) -> List[Dict]:
     # This is a dummy function to simulate search results
     results = []
@@ -17,10 +18,11 @@ def dummy_search(mrn: str, search_options: List[str], query: str) -> List[Dict]:
             "title": f"Result {i+1} for {query} in {source_type}",
             "snippet": f"This is a snippet of the result {i+1} for patient MRN {mrn}...",
             "source_type": source_type,
-            "source_content": f"Detailed content for {source_type} result {i+1}. Patient MRN: {mrn}, Query: {query}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+            "source_content": f"Detailed content for {source_type} result {i+1}. Patient MRN: {mrn}, Query: {query}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
         }
         results.append(result)
     return sorted(results, key=lambda x: x["score"], reverse=True)
+
 
 def render_result_cards(results: List[Dict], cols: int = 3):
     # Calculate the number of rows needed
@@ -36,13 +38,17 @@ def render_result_cards(results: List[Dict], cols: int = 3):
 
                 with cols_layout[col]:
                     expanded = st.session_state[f"expanded_{result['id']}"]
-                    with st.expander(label=f"{result['id'] + 1}. {result['snippet']} ({result['source_type']})", expanded=False):
-                        st.write(result['snippet'])
+                    with st.expander(
+                        label=f"{result['id'] + 1}. {result['snippet']} ({result['source_type']})",
+                        expanded=False,
+                    ):
+                        st.write(result["snippet"])
                         if expanded:
                             st.write(f"**Type:** {result['source_type']}")
-                            st.write(result['source_content'])
+                            st.write(result["source_content"])
                         st.session_state[f"expanded_{result['id']}"] = not expanded
                     st.write("---")
+
 
 def search_page():
     if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
@@ -53,7 +59,7 @@ def search_page():
 
     st.title("Clinical Search")
 
-    if 'search_done' not in st.session_state:
+    if "search_done" not in st.session_state:
         st.session_state.search_done = False
 
     if not st.session_state.search_done:
@@ -64,7 +70,7 @@ def search_page():
             search_options = st.multiselect(
                 "Select search options",
                 ["Notes", "Labs", "Medication Orders", "Diagnoses"],
-                default=["Notes"]
+                default=["Notes"],
             )
         query = st.text_input("Enter your search query")
 
@@ -86,6 +92,7 @@ def search_page():
 
         st.subheader("Search Results")
         render_result_cards(st.session_state.results, cols=3)
+
 
 if __name__ == "__main__":
     search_page()

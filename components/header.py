@@ -1,6 +1,7 @@
 import streamlit as st
 from config import APP_CONFIG
 
+
 def header():
     if APP_CONFIG.SHOW_HEADER:
         st.markdown(
@@ -12,5 +13,5 @@ def header():
                 </div>
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )

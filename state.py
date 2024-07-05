@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Set
 
+
 @dataclass
 class State:
     authenticated: bool = False
@@ -15,6 +16,6 @@ class State:
 
     @classmethod
     def initialize(cls, st):
-        if 'app_state' not in st.session_state:
+        if "app_state" not in st.session_state:
             st.session_state.app_state = cls()
         return st.session_state.app_state

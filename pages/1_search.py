@@ -1,20 +1,24 @@
 import streamlit as st
 from config import APP_CONFIG
-from components.authentication import is_authenticated
+from utils.helpers import CSSLoader, JSLoader
 from components.navigation import render_navigation
 from components.search_components import Sidebar, ResultList, SourceDetail
 from utils.search_functions import DummySearch, add_to_past_searches
 from state import State
 from utils.error_handling import handle_error
 
+
 @handle_error
 def search_page():
     state = State.initialize(st)
 
-    if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
+    if APP_CONFIG.USE_AUTHENTICATION and not state.authenticated:
         st.warning("Please log in to access this page.")
         st.stop()
-    
+
+    CSSLoader.load()
+    JSLoader.load()
+
     render_navigation()
     Sidebar().render()
 
@@ -29,11 +33,11 @@ def search_page():
             search_options = st.multiselect(
                 "Select search options",
                 ["Notes", "Labs", "Medication Orders", "Diagnoses"],
-                default=state.search_options if state.search_options else ["Notes"]
+                default=state.search_options if state.search_options else ["Notes"],
             )
 
         query = st.text_input("Enter your search query", value=state.query)
-        
+
         if st.button("Search") or query:
             if mrn and search_options and query:
                 state.search_done = True
@@ -58,7 +62,7 @@ def search_page():
                     <b>MRN:</b> {state.mrn}
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
         with col2:
             st.markdown(
@@ -67,7 +71,7 @@ def search_page():
                     <b>Search Options:</b> {', '.join(state.search_options)}
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
         query_col, reset_col = st.columns([8, 1])
@@ -78,7 +82,7 @@ def search_page():
                     <b>Query:</b> {state.query}
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
         with reset_col:
             if st.button("Reset", key="reset_search_button"):
@@ -87,7 +91,7 @@ def search_page():
                 state.query = ""
                 state.selected_results = set()
                 st.rerun()
-        
+
         col1, col2 = st.columns([1, 3])
 
         with col1:
@@ -95,6 +99,7 @@ def search_page():
 
         with col2:
             SourceDetail(state.results).render()
+
 
 if __name__ == "__main__":
     search_page()

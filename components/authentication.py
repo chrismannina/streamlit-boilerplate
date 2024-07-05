@@ -5,11 +5,13 @@ from config import APP_CONFIG
 # For in-memory authentication, add or modify users here
 USERS = {
     "admin": {"password": "admin123", "username": "admin"},
-    "user": {"password": "user123", "username": "user"}
+    "user": {"password": "user123", "username": "user"},
 }
+
 
 def is_authenticated():
     return st.session_state.app_state.authenticated
+
 
 def login_user():
     st.title("Login")
@@ -24,10 +26,12 @@ def login_user():
         else:
             st.error("Invalid username or password")
 
+
 def logout_user():
     st.session_state.app_state.authenticated = False
     st.session_state.username = None
     st.rerun()
+
 
 def authenticate_user(username, password):
     if APP_CONFIG.AUTH_METHOD == "in_memory":
@@ -40,12 +44,14 @@ def authenticate_user(username, password):
         pass
     return False
 
+
 def change_password(current_password, new_password):
     username = st.session_state.username
     if authenticate_user(username, current_password):
         USERS[username]["password"] = new_password
         return True
     return False
+
 
 def change_username(new_username):
     old_username = st.session_state.username
@@ -56,12 +62,14 @@ def change_username(new_username):
         return True
     return False
 
+
 # Function to add a new user (for admin use)
 def add_user(username, password):
     if username not in USERS:
         USERS[username] = {"password": password, "username": username}
         return True
     return False
+
 
 # Function to remove a user (for admin use)
 def remove_user(username):

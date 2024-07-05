@@ -10,6 +10,11 @@ from utils.error_handling import handle_error
 
 @handle_error
 def search_page():
+    st.set_page_config(
+        page_title=APP_CONFIG.APP_NAME,
+        page_icon=APP_CONFIG.PAGE_ICON,
+        layout=APP_CONFIG.LAYOUT,
+    )
     state = State.initialize(st)
 
     if APP_CONFIG.USE_AUTHENTICATION and not state.authenticated:
@@ -25,31 +30,32 @@ def search_page():
     st.title("Clinical Search")
 
     if not state.search_done:
+        with st.form(key='search_form'):
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                mrn = st.text_input("Enter Patient MRN", value=state.mrn, key="search-mrn")
+            with col2:
+                search_options = st.multiselect(
+                    "Select search options",
+                    ["Notes", "Labs", "Medication Orders", "Diagnoses"],
+                    default=state.search_options if state.search_options else ["Notes"],
+                    key="search-options"
+                )
+            query = st.text_input("Enter your search query", value=state.query, key="search-query")
+            submitted = st.form_submit_button("Search", use_container_width=True)
 
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            mrn = st.text_input("Enter Patient MRN", value=state.mrn)
-        with col2:
-            search_options = st.multiselect(
-                "Select search options",
-                ["Notes", "Labs", "Medication Orders", "Diagnoses"],
-                default=state.search_options if state.search_options else ["Notes"],
-            )
-
-        query = st.text_input("Enter your search query", value=state.query)
-
-        if st.button("Search") or query:
-            if mrn and search_options and query:
-                state.search_done = True
-                state.mrn = mrn
-                state.search_options = search_options
-                state.query = query
-                search_strategy = DummySearch()  # Or RealSearch() in production
-                state.results = search_strategy.search(mrn, search_options, query)
-                add_to_past_searches(mrn, search_options, query, state.results)
-                st.rerun()
-            else:
-                st.warning("Please fill in all fields (MRN, Search Options, and Query)")
+            if submitted:
+                if mrn and search_options and query:
+                    state.search_done = True
+                    state.mrn = mrn
+                    state.search_options = search_options
+                    state.query = query
+                    search_strategy = DummySearch()  # Or RealSearch() in production
+                    state.results = search_strategy.search(mrn, search_options, query)
+                    add_to_past_searches(mrn, search_options, query, state.results)
+                    st.rerun()
+                else:
+                    st.warning("Please fill in all fields (MRN, Search Options, and Query)")
 
     if state.search_done:
         st.subheader("Search Results")
@@ -58,7 +64,7 @@ def search_page():
         with col1:
             st.markdown(
                 f"""
-                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                <div class="info-box">
                     <b>MRN:</b> {state.mrn}
                 </div>
                 """,
@@ -67,7 +73,7 @@ def search_page():
         with col2:
             st.markdown(
                 f"""
-                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                <div class="info-box">
                     <b>Search Options:</b> {', '.join(state.search_options)}
                 </div>
                 """,
@@ -78,7 +84,7 @@ def search_page():
         with query_col:
             st.markdown(
                 f"""
-                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                <div class="info-box">
                     <b>Query:</b> {state.query}
                 </div>
                 """,
@@ -99,6 +105,9 @@ def search_page():
 
         with col2:
             SourceDetail(state.results).render()
+        
+    
+    
 
 
 if __name__ == "__main__":

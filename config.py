@@ -4,11 +4,9 @@ from dataclasses import dataclass, field
 
 @dataclass
 class AppConfig:
-    APP_NAME: str = "Streamlit Starter Template"
-    PAGE_ICON: str = ":rocket:"
+    APP_NAME: str = "UM Rx Analytics"
+    PAGE_ICON: str = ":medical_symbol:"
     LAYOUT: str = "wide"
-    THEME_COLOR: str = "#3366cc"
-    FONT_FAMILY: str = "sans serif"
     USE_AUTHENTICATION: bool = False
     AUTH_METHOD: str = "in_memory"
     SHOW_NAVBAR: bool = False
@@ -20,7 +18,7 @@ class AppConfig:
             "Settings": {"icon": "gear", "page_number": "2"},
         }
     )
-    CSS_FILE: str = "static/css/main.css"
+    CSS_FILE: str = "static/css/modern.css"
     JS_FILE: str = "static/js/main.js"
     ENVIRONMENT: str = field(
         default_factory=lambda: os.getenv("APP_ENVIRONMENT", "development")

@@ -6,7 +6,7 @@ def footer():
     if APP_CONFIG.SHOW_FOOTER:
         st.markdown(
             f"""
-            <div class="footer">
+            <div class="custom-footer">
                 <p>{APP_CONFIG.FOOTER_TEXT}</p>
             </div>
             """,

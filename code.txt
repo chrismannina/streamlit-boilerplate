@@ -1,38 +1,44 @@
 Project Directory Structure:
-streamlit-boilerplate/
+./
     config.py
     code.txt
-    code_summary.txt
     README.md
     .gitignore
     main.py
-    .streamlit/
-        config.toml
-        secrets.toml
-    utils/
-        search_functions.py
-        helpers.py
+    state.py
+    pages/
+        1_search.py
+        2_settings.py
+        X_search-cards.py
     components/
-        search_components.py
+        header.py
+        navigation.py
         authentication.py
         footer.py
-        navigation.py
+        base.py
+        search_components.py
+        layout.py
     static/
+        js/
+            analytics.js
+            main.js
         css/
             theme.css
             main.css
         images/
-        js/
-            main.js
-            analytics.js
-    pages/
-        2_settings.py
-        X_search-cards.py
-        1_search.py
+    .streamlit/
+        secrets.toml
+        config.toml
+    utils/
+        error_handling.py
+        search_functions.py
+        helpers.py
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/config.py
+File: ./config.py
 Contents:
+import os
 from dataclasses import dataclass, field
+
 
 @dataclass
 class AppConfig:
@@ -45,687 +51,449 @@ class AppConfig:
     AUTH_METHOD: str = "in_memory"
     SHOW_NAVBAR: bool = False
     SHOW_SIDEBAR: bool = True
-    PAGES: dict = field(default_factory=lambda: {
-        "Home": {"icon": "house", "page_number": ""},
-        "Search": {"icon": "mag", "page_number": "1"},
-        "Settings": {"icon": "gear", "page_number": "2"},
-    })
+    PAGES: dict = field(
+        default_factory=lambda: {
+            "Home": {"icon": "house", "page_number": ""},
+            "Search": {"icon": "mag", "page_number": "1"},
+            "Settings": {"icon": "gear", "page_number": "2"},
+        }
+    )
     CSS_FILE: str = "static/css/main.css"
     JS_FILE: str = "static/js/main.js"
+    ENVIRONMENT: str = field(
+        default_factory=lambda: os.getenv("APP_ENVIRONMENT", "development")
+    )
 
-APP_CONFIG = AppConfig()
+    @classmethod
+    def load_config(cls):
+        config = cls()
+        if config.ENVIRONMENT == "production":
+            # Load production-specific settings
+            config.USE_AUTHENTICATION = True
+            # Add other production-specific settings
+        elif config.ENVIRONMENT == "staging":
+            # Load staging-specific settings
+            pass
+        return config
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/code.txt
+
+APP_CONFIG = AppConfig.load_config()
+
+
+File: ./code.txt
 Contents:
 
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/code_summary.txt
+File: ./README.md
 Contents:
-Project Directory Structure:
-streamlit-boilerplate/
-    config.py
-    main.py
-    pages/
-        1_dashboard.py
-        2_settings.py
-    components/
-        navigation.py
-        authentication.py
-        footer.py
-    static/
-        js/
-            analytics.js
-            main.js
-        css/
-            theme.css
-            main.css
-        images/
-            background.jpg
-            logo.png
-    .streamlit/
-        secrets.toml
-        config.toml
-    utils/
-        helpers.py
+# Streamlit Starter Template
 
-File: /home/machris/projects/github/streamlit-boilerplate/config.py
-Contents:
-from dataclasses import dataclass, field
+This is a highly modular and scalable starter template for building Streamlit applications. It provides a flexible project structure with pre-built components and sample pages, making it easy to get started with your Streamlit project.
 
-@dataclass
-class AppConfig:
-    APP_NAME: str = "Streamlit Starter Template"
-    PAGE_ICON: str = ":rocket:"
-    LAYOUT: str = "wide"
-    THEME_COLOR: str = "#3366cc"
-    FONT_FAMILY: str = "sans serif"
-    USE_AUTHENTICATION: bool = False
-    AUTH_METHOD: str = "in_memory"  # Options: "in_memory", "database", "api"
-    SHOW_NAVBAR: bool = False
-    SHOW_SIDEBAR: bool = True
-    PAGES: dict = field(default_factory=lambda: {
-        "Home": {"icon": "house", "page_number": ""},
-        "Dashboard": {"icon": "bar_chart", "page_number": "1"},
-        "Settings": {"icon": "gear", "page_number": "2"},
-    })
+## Features
 
-APP_CONFIG = AppConfig()
+- Multi-page application support
+- Customizable components (navbar, sidebar, footer)
+- Easy configuration management
+- Authentication system (customizable)
+- Separation of concerns (CSS, JS, images)
+- Sample pages and layouts
 
-File: /home/machris/projects/github/streamlit-boilerplate/main.py
+## Getting Started
+
+1. Clone this repository
+2. Install dependencies: `pip install -r requirements.txt`
+3. Run the application: `streamlit run main.py`
+
+## Project Structure
+
+- `main.py`: Entry point of the application
+- `config.py`: Application configuration
+- `pages/`: Individual pages of the application
+- `components/`: Reusable UI components
+- `utils/`: Utility functions and helpers
+- `assets/`: Static assets (CSS, JS, images)
+- `.streamlit/`: Streamlit-specific configurations
+
+## Customization
+
+1. Modify `config.py` to change application-wide settings
+2. Add new pages in the `pages/` directory
+3. Create new components in the `components/` directory
+4. Customize styles in `static/css/main.css`
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+
+File: ./main.py
 Contents:
 import streamlit as st
 from config import APP_CONFIG
-from components.authentication import is_authenticated, login_user, logout_user
+from utils.helpers import CSSLoader, JSLoader
+from state import State
+from components.authentication import login_user, logout_user
 from components.navigation import render_navigation
-from utils.helpers import load_css, load_js
+
 
 def main():
     st.set_page_config(
         page_title=APP_CONFIG.APP_NAME,
         page_icon=APP_CONFIG.PAGE_ICON,
-        layout=APP_CONFIG.LAYOUT
+        layout=APP_CONFIG.LAYOUT,
     )
 
-    load_css()
-    load_js()
+    CSSLoader.load()
+    JSLoader.load()
 
-    if 'authenticated' not in st.session_state:
+    state = State.initialize(st)
+
+    if not state.authenticated:
         if APP_CONFIG.USE_AUTHENTICATION:
-            st.session_state.authenticated = False
+            login_user()
         else:
-            st.session_state.authenticated = True
+            state.authenticated = True
 
-    if not is_authenticated():
-        login_user()
-    else:
+    if state.authenticated:
         render_navigation()
-        
+
         st.title(f"Welcome to {APP_CONFIG.APP_NAME}")
         if APP_CONFIG.USE_AUTHENTICATION:
             st.write(f"Hello, {st.session_state.username}!")
-        else: 
+        else:
             st.write("Hello!")
         st.write("This is the main page of your application.")
         st.write("Use the navigation to explore other pages.")
         if APP_CONFIG.USE_AUTHENTICATION and APP_CONFIG.SHOW_NAVBAR:
             if st.button("Logout", key="navbar_logout", use_container_width=True):
                 logout_user()
-                
+
+
 if __name__ == "__main__":
     main()
 
-File: /home/machris/projects/github/streamlit-boilerplate/pages/1_dashboard.py
+
+File: ./state.py
+Contents:
+from dataclasses import dataclass, field
+from typing import List, Dict, Set
+
+
+@dataclass
+class State:
+    authenticated: bool = False
+    search_done: bool = False
+    selected_results: Set[int] = field(default_factory=set)
+    mrn: str = ""
+    search_options: List[str] = field(default_factory=list)
+    query: str = ""
+    results: List[Dict] = field(default_factory=list)
+    past_searches: List[Dict] = field(default_factory=list)
+    delete_mode: bool = False
+
+    @classmethod
+    def initialize(cls, st):
+        if "app_state" not in st.session_state:
+            st.session_state.app_state = cls()
+        return st.session_state.app_state
+
+
+File: ./pages/1_search.py
+Contents:
+import streamlit as st
+from config import APP_CONFIG
+from utils.helpers import CSSLoader, JSLoader
+from components.navigation import render_navigation
+from components.search_components import Sidebar, ResultList, SourceDetail
+from utils.search_functions import DummySearch, add_to_past_searches
+from state import State
+from utils.error_handling import handle_error
+
+
+@handle_error
+def search_page():
+    state = State.initialize(st)
+
+    if APP_CONFIG.USE_AUTHENTICATION and not state.authenticated:
+        st.warning("Please log in to access this page.")
+        st.stop()
+
+    CSSLoader.load()
+    JSLoader.load()
+
+    render_navigation()
+    Sidebar().render()
+
+    st.title("Clinical Search")
+
+    if not state.search_done:
+
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            mrn = st.text_input("Enter Patient MRN", value=state.mrn)
+        with col2:
+            search_options = st.multiselect(
+                "Select search options",
+                ["Notes", "Labs", "Medication Orders", "Diagnoses"],
+                default=state.search_options if state.search_options else ["Notes"],
+            )
+
+        query = st.text_input("Enter your search query", value=state.query)
+
+        if st.button("Search") or query:
+            if mrn and search_options and query:
+                state.search_done = True
+                state.mrn = mrn
+                state.search_options = search_options
+                state.query = query
+                search_strategy = DummySearch()  # Or RealSearch() in production
+                state.results = search_strategy.search(mrn, search_options, query)
+                add_to_past_searches(mrn, search_options, query, state.results)
+                st.rerun()
+            else:
+                st.warning("Please fill in all fields (MRN, Search Options, and Query)")
+
+    if state.search_done:
+        st.subheader("Search Results")
+
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.markdown(
+                f"""
+                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <b>MRN:</b> {state.mrn}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col2:
+            st.markdown(
+                f"""
+                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <b>Search Options:</b> {', '.join(state.search_options)}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        query_col, reset_col = st.columns([8, 1])
+        with query_col:
+            st.markdown(
+                f"""
+                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <b>Query:</b> {state.query}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with reset_col:
+            if st.button("Reset", key="reset_search_button"):
+                state.search_done = False
+                state.mrn = ""
+                state.query = ""
+                state.selected_results = set()
+                st.rerun()
+
+        col1, col2 = st.columns([1, 3])
+
+        with col1:
+            ResultList(state.results).render()
+
+        with col2:
+            SourceDetail(state.results).render()
+
+
+if __name__ == "__main__":
+    search_page()
+
+
+File: ./pages/2_settings.py
+Contents:
+import streamlit as st
+from config import APP_CONFIG
+from utils.helpers import CSSLoader, JSLoader
+from components.authentication import change_password, change_username
+from components.navigation import render_navigation
+from state import State
+from utils.error_handling import handle_error
+
+
+@handle_error
+def settings_page():
+    state = State.initialize(st)
+
+    if APP_CONFIG.USE_AUTHENTICATION and not state.authenticated:
+        st.warning("Please log in to access this page.")
+        st.stop()
+
+    CSSLoader.load()
+    JSLoader.load()
+    render_navigation()
+
+    st.title("Settings")
+    st.write("This is the settings page. Add your settings content here.")
+
+    if APP_CONFIG.USE_AUTHENTICATION:
+        st.title("User Profile")
+        st.write(f"Current username: {st.session_state.username}")
+
+        st.subheader("Change Password")
+        current_password = st.text_input("Current Password", type="password")
+        new_password = st.text_input("New Password", type="password")
+        if st.button("Change Password"):
+            if change_password(current_password, new_password):
+                st.success("Password changed successfully!")
+            else:
+                st.error(
+                    "Failed to change password. Please check your current password."
+                )
+
+        st.subheader("Change Username")
+        new_username = st.text_input("New Username")
+        if st.button("Change Username"):
+            if change_username(new_username):
+                st.success("Username changed successfully!")
+                st.experimental_rerun()
+            else:
+                st.error(
+                    "Failed to change username. This username might already be taken."
+                )
+
+
+if __name__ == "__main__":
+    settings_page()
+
+
+File: ./pages/X_search-cards.py
 Contents:
 import streamlit as st
 from components.authentication import is_authenticated
 from components.navigation import render_navigation
-
-if not is_authenticated():
-    st.warning("Please log in to access this page.")
-    st.stop()
-
-render_navigation()
-
-st.title("Dashboard")
-st.write("This is the dashboard page. Add your dashboard content here.")
-
-File: /home/machris/projects/github/streamlit-boilerplate/pages/2_settings.py
-Contents:
-import streamlit as st
-from components.authentication import is_authenticated, change_password, change_username
-from components.navigation import render_navigation
 from config import APP_CONFIG
-
-if not is_authenticated():
-    st.warning("Please log in to access this page.")
-    st.stop()
-
-render_navigation()
-
-st.title("Settings")
-st.write("This is the settings page. Add your settings content here.")
-
-
-if APP_CONFIG.USE_AUTHENTICATION:
-    st.title("User Profile")
-    st.write(f"Current username: {st.session_state.username}")
-    
-    st.subheader("Change Password")
-    current_password = st.text_input("Current Password", type="password")
-    new_password = st.text_input("New Password", type="password")
-    if st.button("Change Password"):
-        if change_password(current_password, new_password):
-            st.success("Password changed successfully!")
-        else:
-            st.error("Failed to change password. Please check your current password.")
-
-    st.subheader("Change Username")
-    new_username = st.text_input("New Username")
-    if st.button("Change Username"):
-        if change_username(new_username):
-            st.success("Username changed successfully!")
-            st.experimental_rerun()
-        else:
-            st.error("Failed to change username. This username might already be taken.")
-
-File: /home/machris/projects/github/streamlit-boilerplate/components/navigation.py
-Contents:
-import streamlit as st
-from config import APP_CONFIG
-from components.authentication import logout_user
-from streamlit.runtime.scriptrunner import RerunData, RerunException
-from streamlit.source_util import get_pages
-
-def render_navigation():
-    if APP_CONFIG.SHOW_NAVBAR:
-        render_nav_items(is_sidebar=False)
-    if APP_CONFIG.SHOW_SIDEBAR:
-        with st.sidebar:
-            st.title("Navigation")
-            render_nav_items(is_sidebar=True)
-
-def render_nav_items(is_sidebar=False):
-    cols = st.columns(len(APP_CONFIG.PAGES) + 1) if not is_sidebar else [st.sidebar]
-    
-    for idx, (page_name, settings) in enumerate(APP_CONFIG.PAGES.items()):
-        icon = settings.get("icon")
-        page_number = settings.get("page_number")
-        page_path = f"pages/{page_number}_{page_name.lower()}" if page_name.lower() != "home" else "main"
-
-        if is_sidebar:
-            st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
-        else:
-            with cols[idx]:
-                st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
-    
-    # Logout button for sidebar
-    if is_sidebar and APP_CONFIG.USE_AUTHENTICATION:
-        if st.button("Logout", key="sidebar_logout", use_container_width=True):
-            logout_user()
-
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/components/authentication.py
-Contents:
-import streamlit as st
-from config import APP_CONFIG
-
-# User database
-# For in-memory authentication, add or modify users here
-USERS = {
-    "admin": {"password": "admin123", "username": "admin"},
-    "user": {"password": "user123", "username": "user"}
-}
-
-def is_authenticated():
-    return st.session_state.get('authenticated', False)
-
-def login_user():
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if authenticate_user(username, password):
-            st.session_state.authenticated = True
-            st.session_state.username = username
-            st.success("Logged in successfully!")
-            st.rerun()
-        else:
-            st.error("Invalid username or password")
-
-def logout_user():
-    st.session_state.authenticated = False
-    st.session_state.username = None
-    st.rerun()
-
-def authenticate_user(username, password):
-    if APP_CONFIG.AUTH_METHOD == "in_memory":
-        return username in USERS and USERS[username]["password"] == password
-    elif APP_CONFIG.AUTH_METHOD == "database":
-        # Implement database authentication logic
-        # Example: query a database to check username and password
-        pass
-    elif APP_CONFIG.AUTH_METHOD == "api":
-        # Implement API authentication logic
-        # Example: make an API call to verify username and password
-        pass
-    return False
-
-def change_password(current_password, new_password):
-    username = st.session_state.username
-    if authenticate_user(username, current_password):
-        USERS[username]["password"] = new_password
-        return True
-    return False
-
-def change_username(new_username):
-    old_username = st.session_state.username
-    if new_username not in USERS:
-        USERS[new_username] = USERS.pop(old_username)
-        USERS[new_username]["username"] = new_username
-        st.session_state.username = new_username
-        return True
-    return False
-
-# Function to add a new user (for admin use)
-def add_user(username, password):
-    if username not in USERS:
-        USERS[username] = {"password": password, "username": username}
-        return True
-    return False
-
-# Function to remove a user (for admin use)
-def remove_user(username):
-    if username in USERS:
-        del USERS[username]
-        return True
-    return False
-
-File: /home/machris/projects/github/streamlit-boilerplate/components/footer.py
-Contents:
-import streamlit as st
-from config import APP_CONFIG
-
-def footer():
-    if APP_CONFIG.SHOW_FOOTER:
-        st.markdown(
-            f"""
-            <div class="footer">
-                <p>{APP_CONFIG.FOOTER_TEXT}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/static/js/analytics.js
-Contents:
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/static/js/main.js
-Contents:
-console.log("Streamlit Starter Template loaded");
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/static/css/theme.css
-Contents:
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/static/css/main.css
-Contents:
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/static/images/background.jpg
-Contents:
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/static/images/logo.png
-Contents:
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/.streamlit/secrets.toml
-Contents:
-
-
-File: /home/machris/projects/github/streamlit-boilerplate/.streamlit/config.toml
-Contents:
-[theme]
-primaryColor = "#3366cc"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f0f0"
-textColor = "#31333F"
-font = "sans serif"
-
-[client]
-showSidebarNavigation = false
-
-File: /home/machris/projects/github/streamlit-boilerplate/utils/helpers.py
-Contents:
-import streamlit as st
-
-def load_css():
-    st.markdown("""
-        <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        .stApp {
-            background-color: #f0f2f6;
-        }
-        .stButton>button {
-            background-color: #4CAF50;
-            color: white;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-def load_js():
-    # Add any JavaScript you want to load here
-    pass
-
-
-
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/main.py
-Contents:
-import streamlit as st
-from config import APP_CONFIG
-from components.authentication import is_authenticated, login_user, logout_user
-from components.navigation import render_navigation
-from utils.helpers import load_css, load_js
-
-def main():
-    st.set_page_config(
-        page_title=APP_CONFIG.APP_NAME,
-        page_icon=APP_CONFIG.PAGE_ICON,
-        layout=APP_CONFIG.LAYOUT
-    )
-
-    load_css()
-    load_js()
-
-    if 'authenticated' not in st.session_state:
-        if APP_CONFIG.USE_AUTHENTICATION:
-            st.session_state.authenticated = False
-        else:
-            st.session_state.authenticated = True
-
-    if not is_authenticated():
-        login_user()
-    else:
-        render_navigation()
-        
-        st.title(f"Welcome to {APP_CONFIG.APP_NAME}")
-        if APP_CONFIG.USE_AUTHENTICATION:
-            st.write(f"Hello, {st.session_state.username}!")
-        else: 
-            st.write("Hello!")
-        st.write("This is the main page of your application.")
-        st.write("Use the navigation to explore other pages.")
-        if APP_CONFIG.USE_AUTHENTICATION and APP_CONFIG.SHOW_NAVBAR:
-            if st.button("Logout", key="navbar_logout", use_container_width=True):
-                logout_user()
-                
-if __name__ == "__main__":
-    main()
-
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/utils/search_functions.py
-Contents:
-import streamlit as st
-import random
 from typing import List, Dict
-from datetime import datetime
+import random
+
 
 def dummy_search(mrn: str, search_options: List[str], query: str) -> List[Dict]:
     # This is a dummy function to simulate search results
     results = []
-    for _ in range(10):
+    for i in range(10):
         score = random.uniform(0.5, 1.0)
         source_type = random.choice(search_options)
         result = {
+            "id": i,
             "score": score,
-            "snippet": f"This is a snippet of the result for patient MRN {mrn}...",
+            "title": f"Result {i+1} for {query} in {source_type}",
+            "snippet": f"This is a snippet of the result {i+1} for patient MRN {mrn}...",
             "source_type": source_type,
-            "source_content": f"Detailed content for {source_type} result. Patient MRN: {mrn}, Query: {query}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+            "source_content": f"Detailed content for {source_type} result {i+1}. Patient MRN: {mrn}, Query: {query}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
         }
         results.append(result)
-    
-    # Sort results by score in descending order
-    sorted_results = sorted(results, key=lambda x: x["score"], reverse=True)
-    
-    # Assign IDs based on sorted order
-    for i, result in enumerate(sorted_results):
-        result["id"] = i
-        source_type = str(result["source_type"])
-        result["title"] = f"Result {i + 1} ({source_type})"
-    
-    return sorted_results
+    return sorted(results, key=lambda x: x["score"], reverse=True)
 
-def add_to_past_searches(mrn: str, search_options: List[str], query: str, results: List[Dict]):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    search_data = {
-        "timestamp": timestamp,
-        "mrn": mrn,
-        "search_options": search_options,
-        "query": query,
-        "results": results
-    }
-    st.session_state.past_searches.insert(0, search_data) 
-    st.session_state.past_searches = st.session_state.past_searches[:10]  # Keep only the 10 most recent searches
 
-def delete_selected_searches(selected_indices):
-    for index in sorted(selected_indices, reverse=True):
-        del st.session_state.past_searches[index]
-    if st.session_state.search_done and not st.session_state.past_searches:
-        # If the current search is deleted and no past searches are available, reset search state
+def render_result_cards(results: List[Dict], cols: int = 3):
+    # Calculate the number of rows needed
+    rows = (len(results) + cols - 1) // cols
+    for row in range(rows):
+        cols_layout = st.columns(cols)
+        for col in range(cols):
+            idx = row * cols + col
+            if idx < len(results):
+                result = results[idx]
+                if f"expanded_{result['id']}" not in st.session_state:
+                    st.session_state[f"expanded_{result['id']}"] = False
+
+                with cols_layout[col]:
+                    expanded = st.session_state[f"expanded_{result['id']}"]
+                    with st.expander(
+                        label=f"{result['id'] + 1}. {result['snippet']} ({result['source_type']})",
+                        expanded=False,
+                    ):
+                        st.write(result["snippet"])
+                        if expanded:
+                            st.write(f"**Type:** {result['source_type']}")
+                            st.write(result["source_content"])
+                        st.session_state[f"expanded_{result['id']}"] = not expanded
+                    st.write("---")
+
+
+def search_page():
+    if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
+        st.warning("Please log in to access this page.")
+        st.stop()
+
+    render_navigation()
+
+    st.title("Clinical Search")
+
+    if "search_done" not in st.session_state:
         st.session_state.search_done = False
-        st.session_state.mrn = ""
-        st.session_state.search_options = []
-        st.session_state.query = ""
-        st.session_state.results = []
-        st.session_state.selected_results = set()
-        st.rerun()
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/utils/helpers.py
-Contents:
-import streamlit as st
-from config import APP_CONFIG
-
-def load_css():
-    with open(APP_CONFIG.CSS_FILE, "r") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-def load_js():
-    with open(APP_CONFIG.JS_FILE, "r") as f:
-        st.markdown(f"<script>{f.read()}</script>", unsafe_allow_html=True)
-
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/components/search_components.py
-Contents:
-import streamlit as st
-from typing import List, Dict
-
-def render_sidebar():
-    st.sidebar.title("Search History")
-    
-    if not st.session_state.past_searches:
-        st.sidebar.write("No past searches.")
-        return
-
-    for i, search in enumerate(st.session_state.past_searches):
-        col1, col2 = st.sidebar.columns([3, 1])
+    if not st.session_state.search_done:
+        col1, col2 = st.columns(2)
         with col1:
-            if st.button(f"{search['query'][:20]} [{search['mrn']}]", key=f"past_search_{i}"):
-                # Load this past search
-                st.session_state.search_done = True
-                st.session_state.mrn = search['mrn']
-                st.session_state.search_options = search['search_options']
-                st.session_state.query = search['query']
-                st.session_state.results = search['results']
-                st.session_state.selected_results = set()  # Reset selected results
-                st.rerun()
+            mrn = st.text_input("Enter Patient MRN")
         with col2:
-            if st.button("🗑️", key=f"delete_search_{i}"):
-                del st.session_state.past_searches[i]
-                if not st.session_state.past_searches or i == 0:
-                    # If deleting the current search, reset the search state
-                    st.session_state.search_done = False
-                    st.session_state.mrn = ""
-                    st.session_state.search_options = []
-                    st.session_state.query = ""
-                    st.session_state.results = []
-                    st.session_state.selected_results = set()
-                st.rerun()
-    
-    if st.sidebar.button("Clear History"):
-        st.session_state.past_searches = []
-        # Reset search state
-        st.session_state.search_done = False
-        st.session_state.mrn = ""
-        st.session_state.search_options = []
-        st.session_state.query = ""
-        st.session_state.results = []
-        st.session_state.selected_results = set()
-        st.rerun()
-        
+            search_options = st.multiselect(
+                "Select search options",
+                ["Notes", "Labs", "Medication Orders", "Diagnoses"],
+                default=["Notes"],
+            )
+        query = st.text_input("Enter your search query")
 
-def render_result_list(results: List[Dict]):
-    for result in results:
-        is_selected = result['id'] in st.session_state.selected_results
-        
-        result_number = str(result['id'] + 1)
-        result_title = str(result['title'])
-        result_button = result_number + ". " + result_title
-        
-        # Create a button that looks like text
-        if st.button(result_button, key=f"result_{result['id']}", use_container_width=True, type="primary"):
-            if is_selected:
-                st.session_state.selected_results.remove(result['id'])
+        if st.button("Search") or query:
+            if mrn and search_options and query:
+                st.session_state.search_done = True
+                st.session_state.mrn = mrn
+                st.session_state.search_options = search_options
+                st.session_state.query = query
+                st.session_state.results = dummy_search(mrn, search_options, query)
             else:
-                st.session_state.selected_results.add(result['id'])
-            st.rerun()
+                st.warning("Please fill in all fields (MRN, Search Options, and Query)")
 
-    # Apply custom CSS to style the buttons
-    st.markdown("""
-    <style>
-    .stButton > button[kind="primary"] {
-        display: block !important;
-        width: 100% !important;
-        padding: 8px 12px !important;
-        text-align: left !important;
-        background-color: transparent !important;
-        border: none !important;
-        font-size: 16px !important;
-        color: inherit !important;
-        cursor: pointer !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        background-color: #f0f0f0 !important;
-    }
-    .stButton > button[kind="primary"]:focus {
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    .stButton > button[kind="primary"] > div {
-        text-align: left !important;
-        justify-content: flex-start !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    if st.session_state.search_done:
+        st.subheader("Search Summary")
+        st.write(f"**Patient MRN:** {st.session_state.mrn}")
+        st.write(f"**Search Options:** {', '.join(st.session_state.search_options)}")
+        st.write(f"**Query:** {st.session_state.query}")
 
-def render_source_detail(results: List[Dict]):
-    if 'selected_results' in st.session_state and st.session_state.selected_results:
-        for result_id in st.session_state.selected_results:
-            result = next((r for r in results if r['id'] == result_id), None)
-            if result:
-                st.markdown(
-                    f"""
-                    <div style='padding: 15px; border: 2px solid #ddd; background-color: #f9f9f9; margin-top: 10px;'>
-                    <h4>Result {result['id'] + 1}</h4>
-                    <p><b>Type:</b> {result['source_type']}</p>
-                    <p>{result['source_content']}</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+        st.subheader("Search Results")
+        render_result_cards(st.session_state.results, cols=3)
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/components/authentication.py
+
+if __name__ == "__main__":
+    search_page()
+
+
+File: ./components/header.py
 Contents:
 import streamlit as st
 from config import APP_CONFIG
 
-# User database
-# For in-memory authentication, add or modify users here
-USERS = {
-    "admin": {"password": "admin123", "username": "admin"},
-    "user": {"password": "user123", "username": "user"}
-}
 
-def is_authenticated():
-    return st.session_state.get('authenticated', False)
-
-def login_user():
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if authenticate_user(username, password):
-            st.session_state.authenticated = True
-            st.session_state.username = username
-            st.success("Logged in successfully!")
-            st.rerun()
-        else:
-            st.error("Invalid username or password")
-
-def logout_user():
-    st.session_state.authenticated = False
-    st.session_state.username = None
-    st.rerun()
-
-def authenticate_user(username, password):
-    if APP_CONFIG.AUTH_METHOD == "in_memory":
-        return username in USERS and USERS[username]["password"] == password
-    elif APP_CONFIG.AUTH_METHOD == "database":
-        # Implement database authentication logic
-        # Example: query a database to check username and password
-        pass
-    elif APP_CONFIG.AUTH_METHOD == "api":
-        # Implement API authentication logic
-        # Example: make an API call to verify username and password
-        pass
-    return False
-
-def change_password(current_password, new_password):
-    username = st.session_state.username
-    if authenticate_user(username, current_password):
-        USERS[username]["password"] = new_password
-        return True
-    return False
-
-def change_username(new_username):
-    old_username = st.session_state.username
-    if new_username not in USERS:
-        USERS[new_username] = USERS.pop(old_username)
-        USERS[new_username]["username"] = new_username
-        st.session_state.username = new_username
-        return True
-    return False
-
-# Function to add a new user (for admin use)
-def add_user(username, password):
-    if username not in USERS:
-        USERS[username] = {"password": password, "username": username}
-        return True
-    return False
-
-# Function to remove a user (for admin use)
-def remove_user(username):
-    if username in USERS:
-        del USERS[username]
-        return True
-    return False
-
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/components/footer.py
-Contents:
-import streamlit as st
-from config import APP_CONFIG
-
-def footer():
-    if APP_CONFIG.SHOW_FOOTER:
+def header():
+    if APP_CONFIG.SHOW_HEADER:
         st.markdown(
             f"""
-            <div class="footer">
-                <p>{APP_CONFIG.FOOTER_TEXT}</p>
+            <div class="custom-header">
+                <div>
+                    <h1>{APP_CONFIG.HEADER_TITLE}</h1>
+                    <h2>{APP_CONFIG.HEADER_SUBTITLE}</h2>
+                </div>
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/components/navigation.py
+File: ./components/navigation.py
 Contents:
 import streamlit as st
 from config import APP_CONFIG
 from components.authentication import logout_user
-from streamlit.runtime.scriptrunner import RerunData, RerunException
-from streamlit.source_util import get_pages
+
 
 def render_navigation():
     if APP_CONFIG.SHOW_NAVBAR:
@@ -735,20 +503,33 @@ def render_navigation():
             st.title("Navigation")
             render_nav_items(is_sidebar=True)
 
+
 def render_nav_items(is_sidebar=False):
     cols = st.columns(len(APP_CONFIG.PAGES) + 1) if not is_sidebar else [st.sidebar]
-    
+
     for idx, (page_name, settings) in enumerate(APP_CONFIG.PAGES.items()):
         icon = settings.get("icon")
         page_number = settings.get("page_number")
-        page_path = f"pages/{page_number}_{page_name.lower()}" if page_name.lower() != "home" else "main"
+        page_path = (
+            f"pages/{page_number}_{page_name.lower()}"
+            if page_name.lower() != "home"
+            else "main"
+        )
 
         if is_sidebar:
-            st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
+            st.page_link(
+                f"{page_path}.py",
+                label=f":{icon}: {page_name}",
+                use_container_width=True,
+            )
         else:
             with cols[idx]:
-                st.page_link(f"{page_path}.py", label=f":{icon}: {page_name}", use_container_width=True)
-    
+                st.page_link(
+                    f"{page_path}.py",
+                    label=f":{icon}: {page_name}",
+                    use_container_width=True,
+                )
+
     # Logout button for sidebar
     if is_sidebar:
         if APP_CONFIG.USE_AUTHENTICATION:
@@ -757,12 +538,265 @@ def render_nav_items(is_sidebar=False):
         st.markdown("---")
 
 
+File: ./components/authentication.py
+Contents:
+import streamlit as st
+from config import APP_CONFIG
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/static/css/theme.css
+# User database
+# For in-memory authentication, add or modify users here
+USERS = {
+    "admin": {"password": "admin123", "username": "admin"},
+    "user": {"password": "user123", "username": "user"},
+}
+
+
+def is_authenticated():
+    return st.session_state.app_state.authenticated
+
+
+def login_user():
+    st.title("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if authenticate_user(username, password):
+            st.session_state.app_state.authenticated = True
+            st.session_state.username = username
+            st.success("Logged in successfully!")
+            st.rerun()
+        else:
+            st.error("Invalid username or password")
+
+
+def logout_user():
+    st.session_state.app_state.authenticated = False
+    st.session_state.username = None
+    st.rerun()
+
+
+def authenticate_user(username, password):
+    if APP_CONFIG.AUTH_METHOD == "in_memory":
+        return username in USERS and USERS[username]["password"] == password
+    elif APP_CONFIG.AUTH_METHOD == "database":
+        # Implement database authentication logic
+        pass
+    elif APP_CONFIG.AUTH_METHOD == "api":
+        # Implement API authentication logic
+        pass
+    return False
+
+
+def change_password(current_password, new_password):
+    username = st.session_state.username
+    if authenticate_user(username, current_password):
+        USERS[username]["password"] = new_password
+        return True
+    return False
+
+
+def change_username(new_username):
+    old_username = st.session_state.username
+    if new_username not in USERS:
+        USERS[new_username] = USERS.pop(old_username)
+        USERS[new_username]["username"] = new_username
+        st.session_state.username = new_username
+        return True
+    return False
+
+
+# Function to add a new user (for admin use)
+def add_user(username, password):
+    if username not in USERS:
+        USERS[username] = {"password": password, "username": username}
+        return True
+    return False
+
+
+# Function to remove a user (for admin use)
+def remove_user(username):
+    if username in USERS:
+        del USERS[username]
+        return True
+    return False
+
+
+File: ./components/footer.py
+Contents:
+import streamlit as st
+from config import APP_CONFIG
+
+
+def footer():
+    if APP_CONFIG.SHOW_FOOTER:
+        st.markdown(
+            f"""
+            <div class="footer">
+                <p>{APP_CONFIG.FOOTER_TEXT}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+File: ./components/base.py
+Contents:
+from abc import ABC, abstractmethod
+
+
+class BaseComponent(ABC):
+    @abstractmethod
+    def render(self):
+        pass
+
+
+File: ./components/search_components.py
+Contents:
+import streamlit as st
+from typing import List, Dict
+from components.base import BaseComponent
+
+
+class Sidebar(BaseComponent):
+    def render(self):
+        st.sidebar.title("Search History")
+
+        if not st.session_state.app_state.past_searches:
+            st.sidebar.write("No past searches.")
+            return
+
+        for i, search in enumerate(st.session_state.app_state.past_searches):
+            col1, col2 = st.sidebar.columns([3, 1])
+            with col1:
+                if st.button(
+                    f"{search['query'][:20]} [{search['mrn']}]", key=f"past_search_{i}"
+                ):
+                    # Load this past search
+                    st.session_state.app_state.search_done = True
+                    st.session_state.app_state.mrn = search["mrn"]
+                    st.session_state.app_state.search_options = search["search_options"]
+                    st.session_state.app_state.query = search["query"]
+                    st.session_state.app_state.results = search["results"]
+                    st.session_state.app_state.selected_results = (
+                        set()
+                    )  # Reset selected results
+                    st.rerun()
+            with col2:
+                if st.button("🗑️", key=f"delete_search_{i}"):
+                    del st.session_state.app_state.past_searches[i]
+                    if not st.session_state.app_state.past_searches or i == 0:
+                        # If deleting the current search, reset the search state
+                        st.session_state.app_state.search_done = False
+                        st.session_state.app_state.mrn = ""
+                        st.session_state.app_state.search_options = []
+                        st.session_state.app_state.query = ""
+                        st.session_state.app_state.results = []
+                        st.session_state.app_state.selected_results = set()
+                    st.rerun()
+
+        if st.sidebar.button("Clear History"):
+            st.session_state.app_state.past_searches = []
+            # Reset search state
+            st.session_state.app_state.search_done = False
+            st.session_state.app_state.mrn = ""
+            st.session_state.app_state.search_options = []
+            st.session_state.app_state.query = ""
+            st.session_state.app_state.results = []
+            st.session_state.app_state.selected_results = set()
+            st.rerun()
+
+
+class ResultList(BaseComponent):
+    def __init__(self, results: List[Dict]):
+        self.results = results
+
+    def render(self):
+        for result in self.results:
+            is_selected = result["id"] in st.session_state.app_state.selected_results
+
+            result_number = str(result["id"] + 1)
+            result_title = str(result["title"])
+            result_button = result_number + ". " + result_title
+
+            if st.button(
+                result_button,
+                key=f"result_{result['id']}",
+                use_container_width=True,
+                type="primary",
+            ):
+                if is_selected:
+                    st.session_state.app_state.selected_results.remove(result["id"])
+                else:
+                    st.session_state.app_state.selected_results.add(result["id"])
+                st.rerun()
+
+
+class SourceDetail(BaseComponent):
+    def __init__(self, results: List[Dict]):
+        self.results = results
+
+    def render(self):
+        if st.session_state.app_state.selected_results:
+            for result_id in st.session_state.app_state.selected_results:
+                result = next((r for r in self.results if r["id"] == result_id), None)
+                if result:
+                    st.markdown(
+                        f"""
+                        <div style='padding: 15px; border: 2px solid #ddd; background-color: #f9f9f9; margin-top: 10px;'>
+                        <h4>Result {result['id'] + 1}</h4>
+                        <p><b>Type:</b> {result['source_type']}</p>
+                        <p>{result['source_content']}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+
+File: ./components/layout.py
+Contents:
+import streamlit as st
+from config import APP_CONFIG
+
+
+def page_container(content_func):
+    st.markdown(
+        f"""
+        <div class="custom-header">
+            <h1>{APP_CONFIG.HEADER_TITLE}</h1>
+            <h2>{APP_CONFIG.HEADER_SUBTITLE}</h2>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="main-content">', unsafe_allow_html=True)
+    content_func()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="custom-footer">
+            {APP_CONFIG.FOOTER_TEXT}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+File: ./static/js/analytics.js
 Contents:
 
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/static/css/main.css
+File: ./static/js/main.js
+Contents:
+console.log("Streamlit Starter Template loaded");
+
+
+File: ./static/css/theme.css
+Contents:
+
+
+File: ./static/css/main.css
 Contents:
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
@@ -816,266 +850,131 @@ footer {visibility: hidden;}
     text-align: left !important;
     justify-content: flex-start !important;
 }
+.stIcon {
+    cursor: pointer;
+    margin-top: 25px;
+}
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/static/js/main.js
+
+File: ./utils/error_handling.py
 Contents:
-console.log("Streamlit Starter Template loaded");
+import logging
+import streamlit as st
 
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/static/js/analytics.js
-Contents:
+def handle_error(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logging.error(f"An error occurred: {str(e)}")
+            st.error("An unexpected error occurred. Please try again later.")
+
+    return wrapper
 
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/pages/2_settings.py
+File: ./utils/search_functions.py
 Contents:
 import streamlit as st
-from config import APP_CONFIG
-from components.authentication import is_authenticated, change_password, change_username
-from components.navigation import render_navigation
-
-
-if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
-    st.warning("Please log in to access this page.")
-    st.stop()
-
-render_navigation()
-
-st.title("Settings")
-st.write("This is the settings page. Add your settings content here.")
-
-
-if APP_CONFIG.USE_AUTHENTICATION:
-    st.title("User Profile")
-    st.write(f"Current username: {st.session_state.username}")
-    
-    st.subheader("Change Password")
-    current_password = st.text_input("Current Password", type="password")
-    new_password = st.text_input("New Password", type="password")
-    if st.button("Change Password"):
-        if change_password(current_password, new_password):
-            st.success("Password changed successfully!")
-        else:
-            st.error("Failed to change password. Please check your current password.")
-
-    st.subheader("Change Username")
-    new_username = st.text_input("New Username")
-    if st.button("Change Username"):
-        if change_username(new_username):
-            st.success("Username changed successfully!")
-            st.experimental_rerun()
-        else:
-            st.error("Failed to change username. This username might already be taken.")
-
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/pages/X_search-cards.py
-Contents:
-import streamlit as st
-from components.authentication import is_authenticated
-from components.navigation import render_navigation
-from config import APP_CONFIG
-from typing import List, Dict
 import random
-
-def dummy_search(mrn: str, search_options: List[str], query: str) -> List[Dict]:
-    # This is a dummy function to simulate search results
-    results = []
-    for i in range(10):
-        score = random.uniform(0.5, 1.0)
-        source_type = random.choice(search_options)
-        result = {
-            "id": i,
-            "score": score,
-            "title": f"Result {i+1} for {query} in {source_type}",
-            "snippet": f"This is a snippet of the result {i+1} for patient MRN {mrn}...",
-            "source_type": source_type,
-            "source_content": f"Detailed content for {source_type} result {i+1}. Patient MRN: {mrn}, Query: {query}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-        }
-        results.append(result)
-    return sorted(results, key=lambda x: x["score"], reverse=True)
-
-def render_result_cards(results: List[Dict], cols: int = 3):
-    # Calculate the number of rows needed
-    rows = (len(results) + cols - 1) // cols
-    for row in range(rows):
-        cols_layout = st.columns(cols)
-        for col in range(cols):
-            idx = row * cols + col
-            if idx < len(results):
-                result = results[idx]
-                if f"expanded_{result['id']}" not in st.session_state:
-                    st.session_state[f"expanded_{result['id']}"] = False
-
-                with cols_layout[col]:
-                    expanded = st.session_state[f"expanded_{result['id']}"]
-                    with st.expander(label=f"{result['id'] + 1}. {result['snippet']} ({result['source_type']})", expanded=False):
-                        st.write(result['snippet'])
-                        if expanded:
-                            st.write(f"**Type:** {result['source_type']}")
-                            st.write(result['source_content'])
-                        st.session_state[f"expanded_{result['id']}"] = not expanded
-                    st.write("---")
-
-def search_page():
-    if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
-        st.warning("Please log in to access this page.")
-        st.stop()
-
-    render_navigation()
-
-    st.title("Clinical Search")
-
-    if 'search_done' not in st.session_state:
-        st.session_state.search_done = False
-
-    if not st.session_state.search_done:
-        col1, col2 = st.columns(2)
-        with col1:
-            mrn = st.text_input("Enter Patient MRN")
-        with col2:
-            search_options = st.multiselect(
-                "Select search options",
-                ["Notes", "Labs", "Medication Orders", "Diagnoses"],
-                default=["Notes"]
-            )
-        query = st.text_input("Enter your search query")
-
-        if st.button("Search") or query:
-            if mrn and search_options and query:
-                st.session_state.search_done = True
-                st.session_state.mrn = mrn
-                st.session_state.search_options = search_options
-                st.session_state.query = query
-                st.session_state.results = dummy_search(mrn, search_options, query)
-            else:
-                st.warning("Please fill in all fields (MRN, Search Options, and Query)")
-
-    if st.session_state.search_done:
-        st.subheader("Search Summary")
-        st.write(f"**Patient MRN:** {st.session_state.mrn}")
-        st.write(f"**Search Options:** {', '.join(st.session_state.search_options)}")
-        st.write(f"**Query:** {st.session_state.query}")
-
-        st.subheader("Search Results")
-        render_result_cards(st.session_state.results, cols=3)
-
-if __name__ == "__main__":
-    search_page()
+from typing import List, Dict
+from datetime import datetime
+from abc import ABC, abstractmethod
 
 
-File: /Users/chrismannina/cs-projects/streamlit-boilerplate/pages/1_search.py
+class SearchStrategy(ABC):
+    @abstractmethod
+    def search(self, mrn: str, search_options: List[str], query: str) -> List[Dict]:
+        pass
+
+
+class DummySearch(SearchStrategy):
+    def search(self, mrn: str, search_options: List[str], query: str) -> List[Dict]:
+        results = []
+        for _ in range(10):
+            score = random.uniform(0.5, 1.0)
+            source_type = random.choice(search_options)
+            result = {
+                "score": score,
+                "snippet": f"This is a snippet of the result for patient MRN {mrn}...",
+                "source_type": source_type,
+                "source_content": f"Detailed content for {source_type} result. Patient MRN: {mrn}, Query: {query}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            }
+            results.append(result)
+
+        sorted_results = sorted(results, key=lambda x: x["score"], reverse=True)
+
+        for i, result in enumerate(sorted_results):
+            result["id"] = i
+            result["title"] = f"Result {i + 1} ({result['source_type']})"
+
+        return sorted_results
+
+
+class RealSearch(SearchStrategy):
+    def search(self, mrn: str, search_options: List[str], query: str) -> List[Dict]:
+        # Implement real search logic here
+        pass
+
+
+def add_to_past_searches(
+    mrn: str, search_options: List[str], query: str, results: List[Dict]
+):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    search_data = {
+        "timestamp": timestamp,
+        "mrn": mrn,
+        "search_options": search_options,
+        "query": query,
+        "results": results,
+    }
+    st.session_state.app_state.past_searches.insert(0, search_data)
+    st.session_state.app_state.past_searches = st.session_state.app_state.past_searches[
+        :10
+    ]  # Keep only the 10 most recent searches
+
+
+def delete_selected_searches(selected_indices):
+    for index in sorted(selected_indices, reverse=True):
+        del st.session_state.app_state.past_searches[index]
+    if (
+        st.session_state.app_state.search_done
+        and not st.session_state.app_state.past_searches
+    ):
+        # If the current search is deleted and no past searches are available, reset search state
+        st.session_state.app_state.search_done = False
+        st.session_state.app_state.mrn = ""
+        st.session_state.app_state.search_options = []
+        st.session_state.app_state.query = ""
+        st.session_state.app_state.results = []
+        st.session_state.app_state.selected_results = set()
+        st.rerun()
+
+
+File: ./utils/helpers.py
 Contents:
 import streamlit as st
 from config import APP_CONFIG
-from components.authentication import is_authenticated
-from components.navigation import render_navigation
-from components.search_components import render_sidebar, render_result_list, render_source_detail
-from utils.search_functions import dummy_search, add_to_past_searches
+import logging
 
-# Initialize session state for past searches
-if 'past_searches' not in st.session_state:
-    st.session_state.past_searches = []
-if 'delete_mode' not in st.session_state:
-    st.session_state.delete_mode = False
 
-def search_page():
-    if APP_CONFIG.USE_AUTHENTICATION and not is_authenticated():
-        st.warning("Please log in to access this page.")
-        st.stop()
+class CSSLoader:
+    @staticmethod
+    def load(file_path=APP_CONFIG.CSS_FILE):
+        try:
+            with open(file_path, "r") as f:
+                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            logging.error(f"CSS file not found: {file_path}")
 
-    # Initialize session state variables
-    if 'search_done' not in st.session_state:
-        st.session_state.search_done = False
-    if 'selected_results' not in st.session_state:
-        st.session_state.selected_results = set()
-    if 'mrn' not in st.session_state:
-        st.session_state.mrn = ""
-    if 'search_options' not in st.session_state:
-        st.session_state.search_options = []
-    if 'query' not in st.session_state:
-        st.session_state.query = ""
-    if 'results' not in st.session_state:
-        st.session_state.results = []
-    
-    render_navigation()
-    render_sidebar()
 
-    st.title("Clinical Search")
-
-    if not st.session_state.search_done:
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            mrn = st.text_input("Enter Patient MRN")
-        with col2:
-            search_options = st.multiselect(
-                "Select search options",
-                ["Notes", "Labs", "Medication Orders", "Diagnoses"],
-                default=["Notes"]
-            )
-        query = st.text_input("Enter your search query")
-
-        if st.button("Search") or query:
-            if mrn and search_options and query:
-                st.session_state.search_done = True
-                st.session_state.mrn = mrn
-                st.session_state.search_options = search_options
-                st.session_state.query = query
-                st.session_state.results = dummy_search(mrn, search_options, query)
-                add_to_past_searches(mrn, search_options, query, st.session_state.results)
-                st.rerun()
-            else:
-                st.warning("Please fill in all fields (MRN, Search Options, and Query)")
-
-    if st.session_state.search_done:
-        
-
-        # Display MRN and Search Options
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            st.markdown(
-                f"""
-                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
-                    <b>MRN:</b> {st.session_state.mrn}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col2:
-            st.markdown(
-                f"""
-                <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
-                    <b>Search Options:</b> {', '.join(st.session_state.search_options)}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-                # Display MRN and Search Options
-        col1, col2 = st.columns([8, 1])
-        with col1:
-            st.markdown(
-            f"""
-            <div style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
-                <b>Query:</b> {st.session_state.query}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        with col2:
-            if st.button("Reset", key="reset_search_button"):
-                st.session_state.search_done = False
-                st.session_state.selected_results = set()
-                st.rerun()
-        
-        st.subheader("Search Results")
-
-        col1, col2 = st.columns([1, 3])
-
-        with col1:
-            render_result_list(st.session_state.results)
-
-        with col2:
-            render_source_detail(st.session_state.results)
-
-if __name__ == "__main__":
-    search_page()
+class JSLoader:
+    @staticmethod
+    def load(file_path=APP_CONFIG.JS_FILE):
+        try:
+            with open(file_path, "r") as f:
+                st.markdown(f"<script>{f.read()}</script>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            logging.error(f"JS file not found: {file_path}")
 
 

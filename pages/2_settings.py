@@ -9,6 +9,11 @@ from utils.error_handling import handle_error
 
 @handle_error
 def settings_page():
+    st.set_page_config(
+        page_title=APP_CONFIG.APP_NAME,
+        page_icon=APP_CONFIG.PAGE_ICON,
+        layout=APP_CONFIG.LAYOUT,
+    )
     state = State.initialize(st)
 
     if APP_CONFIG.USE_AUTHENTICATION and not state.authenticated:
@@ -42,7 +47,7 @@ def settings_page():
         if st.button("Change Username"):
             if change_username(new_username):
                 st.success("Username changed successfully!")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(
                     "Failed to change username. This username might already be taken."

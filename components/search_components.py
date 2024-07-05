@@ -63,7 +63,7 @@ class ResultList(BaseComponent):
             result_number = str(result["id"] + 1)
             result_title = str(result["title"])
             result_button = result_number + ". " + result_title
-
+            
             if st.button(
                 result_button,
                 key=f"result_{result['id']}",
@@ -76,7 +76,6 @@ class ResultList(BaseComponent):
                     st.session_state.app_state.selected_results.add(result["id"])
                 st.rerun()
 
-
 class SourceDetail(BaseComponent):
     def __init__(self, results: List[Dict]):
         self.results = results
@@ -88,10 +87,10 @@ class SourceDetail(BaseComponent):
                 if result:
                     st.markdown(
                         f"""
-                        <div style='padding: 15px; border: 2px solid #ddd; background-color: #f9f9f9; margin-top: 10px;'>
-                        <h4>Result {result['id'] + 1}</h4>
-                        <p><b>Type:</b> {result['source_type']}</p>
-                        <p>{result['source_content']}</p>
+                        <div class="result-detail">
+                            <h4>Result {result['id'] + 1}</h4>
+                            <p><b>Type:</b> {result['source_type']}</p>
+                            <p>{result['source_content']}</p>
                         </div>
                         """,
                         unsafe_allow_html=True,
